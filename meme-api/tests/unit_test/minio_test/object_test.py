@@ -1,7 +1,7 @@
 from io import BytesIO
-import time
 from typing import Generator
 
+from minio.error import S3Error
 import requests
 from minio.helpers import ObjectWriteResult
 import pytest
@@ -9,6 +9,7 @@ import pytest
 from minio_s3.minio_s3 import MinioS3
 
 
+@pytest.mark.minio
 def test_upload_file(
     minio_instance: "MinioS3",
     file_data: tuple[str, BytesIO, int],
@@ -24,6 +25,7 @@ def test_upload_file(
     assert result.bucket_name == minio_instance.bucket_name
 
 
+@pytest.mark.minio
 def test_stat(
     minio_instance: "MinioS3",
     file_data: tuple[str, BytesIO, int],
@@ -37,6 +39,7 @@ def test_stat(
     assert stats.bucket_name == minio_instance.bucket_name
 
 
+@pytest.mark.minio
 def test_get_url(
     minio_instance: "MinioS3",
     clean_bucket_fixture,
@@ -47,6 +50,7 @@ def test_get_url(
     assert url
 
 
+@pytest.mark.minio
 def test_url_content(
     minio_instance: "MinioS3",
     clean_bucket_fixture,
@@ -60,6 +64,7 @@ def test_url_content(
     assert body == bytes_io.getvalue()
 
 
+@pytest.mark.minio
 def test_download_file(
     minio_instance: "MinioS3",
     clean_bucket_fixture,
@@ -71,3 +76,28 @@ def test_download_file(
     )
     result_bytes = b"".join(b_gen)
     assert result_bytes == bytes_io.getvalue()
+
+
+@pytest.mark.minio
+def test_remove_object(
+    minio_instance: "MinioS3",
+    clean_bucket_fixture,
+    uploaded_file: tuple[ObjectWriteResult, BytesIO],
+):
+    object, _ = uploaded_file
+    minio_instance.remove_object(name=object.object_name)
+    with pytest.raises(S3Error):
+        minio_instance.stats(name=object.object_name)
+
+
+def test_remove_objects(
+    minio_instance: "MinioS3",
+    clean_bucket_fixture,
+    uploaded_file: tuple[ObjectWriteResult, BytesIO],
+):
+    object, bytes = uploaded_file
+    objects = minio_instance.get_files()
+    assert len(objects) == 1
+    minio_instance.remove_objects(object_names=[object.object_name])
+    objects = minio_instance.get_files()
+    assert len(objects) == 0

@@ -1,26 +1,7 @@
 import pytest
 
 from minio_s3.minio_s3 import MinioS3
-from config import ConfigTest
 from io import BytesIO
-
-
-@pytest.fixture(scope="session", autouse=True)
-def minio_instance():
-    """
-    Фикстура для создания и последующего удаления бакета для тестовых целей"""
-    print(" * Creating minio instance * ")
-    minio = MinioS3(
-        bucket_name=ConfigTest.minio_bucket,
-        access_key=ConfigTest.minio_access_key,
-        secret_key=ConfigTest.minio_secret_key,
-        host=ConfigTest.minio_host,
-        secure=False,
-    )
-    yield minio
-    minio.delete_bucket()
-    del minio
-    print(" * Minio instance deleted * ")
 
 
 @pytest.fixture

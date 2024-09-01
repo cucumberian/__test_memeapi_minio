@@ -3,6 +3,9 @@ import pytest
 
 from db.db import DatabaseManager
 from repository.meme_repository import MemeRepo
+from service.meme_service import MemeService
+from minio_s3.minio_s3 import MinioS3
+
 from schema.meme_schema import MemeDbAdd
 
 from config import ConfigTest
@@ -25,6 +28,24 @@ def repo_instance(db_instance: "DatabaseManager"):
     print(" * Repository instance closed * ")
 
 
+@pytest.fixture(scope="session")
+def minio_instance():
+    """
+    Фикстура для создания и последующего удаления бакета для тестовых целей"""
+    print(" * Creating minio instance * ")
+    minio = MinioS3(
+        bucket_name=ConfigTest.minio_bucket,
+        access_key=ConfigTest.minio_access_key,
+        secret_key=ConfigTest.minio_secret_key,
+        host=ConfigTest.minio_host,
+        secure=False,
+    )
+    yield minio
+    minio.remove_bucket()
+    del minio
+    print(" * Minio instance deleted * ")
+
+
 @pytest.fixture(scope="function")
 def clean_db_table(repo_instance: "MemeRepo"):
     print(" * Cleaning database table * ")
@@ -42,3 +63,9 @@ def added_meme(repo_instance: "MemeRepo"):
     )
     added_meme = repo_instance.add_meme(meme=meme)
     return added_meme
+
+
+@pytest.fixture(scope="session")
+def meme_service(repo_instance: "MemeRepo", minio_instance: "MinioS3"):
+    meme_service = MemeService(meme_repo=repo_instance, minio=minio_instance)
+    yield meme_service

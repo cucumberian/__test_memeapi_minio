@@ -70,13 +70,38 @@ class MinioS3:
         if bucket_name is None:
             bucket_name = self.bucket_name
         bucket_objects = self.get_files()
-        deleted_objects = (DeleteObject(o.object_name) for o in bucket_objects)
+        self.remove_objects(
+            object_names=[
+                o.object_name
+                for o in bucket_objects
+                if o.object_name is not None
+            ],
+            bucket_name=bucket_name,
+        )
+
+    def remove_objects(
+        self, object_names: list[str], bucket_name: str | None = None
+    ):
+        """
+        ## Удаление объектов из бакета
+
+        ### Args:
+            - `object_names (list[str])`: список имен объектов
+            - `bucket_name (str | None)`: имя бакета. Defaults to None.
+
+        ### Raises:
+            - `Exception`: если произошла ошибка при удалении объектов
+        """
+        if bucket_name is None:
+            bucket_name = self.bucket_name
+        objects_to_delete = (DeleteObject(name) for name in object_names)
         for error in self.client.remove_objects(
-            bucket_name=bucket_name, delete_object_list=deleted_objects
+            bucket_name=self.bucket_name,
+            delete_object_list=objects_to_delete,
         ):
             raise Exception("Не удалось удалить объект" + str(error))
 
-    def delete_bucket(self, bucket_name: str | None = None):
+    def remove_bucket(self, bucket_name: str | None = None):
         """
         ## Удаляет бакет
 
@@ -133,3 +158,9 @@ class MinioS3:
             offset += 2048
             if offset >= total_size:
                 break
+
+    def remove_object(self, name: str):
+        self.client.remove_object(
+            bucket_name=self.bucket_name,
+            object_name=name,
+        )

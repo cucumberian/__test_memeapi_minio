@@ -1,6 +1,6 @@
-from schema.meme import MemeDbAdd
-from schema.meme import MemeDb
-from schema.meme import MemeDbModify
+from schema.meme_schema import MemeDbAdd
+from schema.meme_schema import MemeDb
+from schema.meme_schema import MemeDbModify
 
 from repository.meme_repository import MemeRepo
 
